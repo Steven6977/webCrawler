@@ -1,0 +1,36 @@
+{
+  "paging": {
+    "is_end": true,
+    "totals": 4,
+    "previous":
+      "http://www.zhihu.com/api/v4/members/test-name-47/followees?include=data%5B%2A%5D.answer_count%2Carticles_count%2Cgender%2Cfollower_count%2Cis_followed%2Cis_following%2Cbadge%5B%3F%28type%3Dbest_answerer%29%5D.topics&limit=20&offset=0",
+    "is_start": true,
+    "next":
+      "http://www.zhihu.com/api/v4/members/test-name-47/followees?include=data%5B%2A%5D.answer_count%2Carticles_count%2Cgender%2Cfollower_count%2Cis_followed%2Cis_following%2Cbadge%5B%3F%28type%3Dbest_answerer%29%5D.topics&limit=20&offset=20"
+  },
+  "data": [
+    {
+      "is_followed": false,
+      "avatar_url_template":
+        "https://pic3.zhimg.com/v2-49e8e1a8e10472ce305c046fa2caf03d_{size}.jpg",
+      "user_type": "people",
+      "answer_count": 0,
+      "badge": [],
+      "is_following": true,
+      "headline": "",
+      "url_token": "wangyisi",
+      "id": "2a45476bd159ab6decf57c84228105f2",
+      "articles_count": 1,
+      "name": "\u738b\u4ea6\u65af",
+      "url":
+        "http://www.zhihu.com/api/v4/people/2a45476bd159ab6decf57c84228105f2",
+      "gender": -1,
+      "is_advertiser": false,
+      "avatar_url":
+        "https://pic3.zhimg.com/v2-49e8e1a8e10472ce305c046fa2caf03d_is.jpg",
+      "is_org": false,
+      "follower_count": 270,
+      "type": "people"
+    }
+  ]
+}
