@@ -3,16 +3,14 @@ web crawler for zhihu.com, searching for user data,based on nodejs
 js爬虫，抓取知乎用户数据
 
 
-## update log
+## change log
 2018-04-08: prototype，ouput to console，need to add persistence like databases  
 2018-04-08: 原型，结果全部输出到控制台的，后续需要增加持久化，存储文件等
 
 
 ## demonstration
 
-<video autoplay loop muted>
-<source src="https://raw.githubusercontent.com/Steven6977/image-hosting/master/1.mp4" type="video/mp4">
-</video>
+  ![image](https://github.com/Steven6977/image-hosting/blob/master/2.gif)
 
 ## usage
 
