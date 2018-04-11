@@ -2,6 +2,7 @@ const Crawler = require("crawler"),
   EventEmitter = require("events").EventEmitter,
   //my custom modules
   { User, UserConnection } = require("./User"),
+  Dao = require("./Dao"),
   //private methods
   analyzing = Symbol(),
   analyzeStart = Symbol(),
@@ -31,23 +32,30 @@ let finalHttpHeader = null;
  */
 
 class ZhihuCrawler {
+
   constructor({
-    maxDepth = 1, //default value
-    maxConnections = 5
+    database = null,
+    maxDepth = 1, 
+	maxConnections = 5,
+	rateLimit = 0
   }) {
     this.maxDepth = maxDepth;
 
     this.crawler = new Crawler({
       /**
-       * the thing is, if the http requests is sending fast, the server will just reject
+       * the thing is, if the http requests is sending too fast, the server will just reject
        */
-      maxConnections: maxConnections
+      maxConnections: maxConnections,
       /**
        * slow down, maxConnections will be forced to 1 if rateLimit is passed!
        * so, there will only be one connection at the meantime
        */
-      //rateLimit: rateLimit
+      rateLimit: rateLimit
     });
+
+    if (database != null) {
+      this.dao = new Dao(database);
+    }
 
     this.hadDone = new Set();
     this.eventDriver = new EventEmitter();
@@ -59,42 +67,55 @@ class ZhihuCrawler {
    * start the task
    */
   start({ entry, httpHeader, finished }) {
-    let { name, url_token } = entry;
-    if (url_token == null || url_token == "") {
-      console.log("url_token is empty! exiting...");
-      return;
-    }
+    this.dao.init().then(() => {
+      let { name, url_token } = entry;
+      if (url_token == null || url_token == "") {
+        console.log("url_token is empty! exiting...");
+        return;
+      }
 
-    console.log(`entry 
-    -name: ${name}
-    -url_token: ${url_token}
-    -maxDepth: ${this.maxDepth}
-    `);
+      console.log(`entry 
+		-name: ${name}
+		-url_token: ${url_token}
+		-maxDepth: ${this.maxDepth}
+		`);
 
-    if (typeof finished == "function") {
-      this.crawler.on("drain", function() {
-        finished();
-      });
-    }
+      if (typeof finished == "function") {
+        this.crawler.on("drain", function() {
+          finished();
+        });
+      }
 
-    //merge together http header
-    finalHttpHeader = Object.assign({}, HEADER, httpHeader);
+      //merge together http header
+      finalHttpHeader = Object.assign({}, HEADER, httpHeader);
 
-    //start searching
-    this[analyzeStart](
-      {
-        name,
-        url_token
-      },
-      1
-    );
+      //start searching
+      this[analyzeStart](
+        {
+          name,
+          url_token
+        },
+        1
+      );
+    });
   }
 
   /**
    * you can save use to database or file
    */
-  handleUser(user) {
-    
+  handleUser(users) {
+	//sometimes may insert failed for duplicating, but it's normal, because some peolple just following each other
+    this.dao.bulkInserts(users).then(rows => {
+      let names = users.map(u => u.name);
+      console.log(names.join(","));
+
+	  if(rows == null)return;
+
+      if (rows.affectedRows !== users.length) {
+        let failed = users.length - rows.affectedRows;
+        console.log(`\n ${failed} item(s) inserted failing \n`);
+      }
+    }).catch(e => console.log(e));
   }
 
   /**
@@ -112,20 +133,22 @@ class ZhihuCrawler {
       if (!stop) {
         //traversing followees
         for (const followee of userConn.followees.values()) {
-            this[analyzeStart](followee, userConn.depth + 1);
+          this[analyzeStart](followee, userConn.depth + 1);
         }
 
         //add followers
         for (const follower of userConn.followers.values()) {
-            this[analyzeStart](follower, userConn.depth + 1);
+          this[analyzeStart](follower, userConn.depth + 1);
         }
       }
 
-      this.eventDriver.removeListener(userConn.user.url_token, this[analyzeEnd]);
+      this.eventDriver.removeListener(
+        userConn.user.url_token,
+        this[analyzeEnd]
+      );
       userConn.followees = null;
       userConn.followers = null;
       userConn = null;
-    
     }
   }
 
@@ -133,8 +156,8 @@ class ZhihuCrawler {
     if (this.hadDone.has(user.url_token)) {
       return;
     }
-    
-    this.hadDone.add(user.url_token)
+
+    this.hadDone.add(user.url_token);
 
     let userConn = new UserConnection(user, depth);
     userConn.depth = depth;
@@ -168,15 +191,16 @@ class ZhihuCrawler {
             console.error(error);
           } else {
             try {
-              var respBody = JSON.parse(res.body);
-              let names = [];
+              let respBody = JSON.parse(res.body)
+            	,users = [];
+
               respBody.data.forEach(e => {
-                names.push(e.name);
                 let u = new User(e);
                 targetSet.add(u);
-                self.handleUser(u);
+                users.push(u);
               });
-              console.log(names.join(','));
+
+              self.handleUser(users);
 
               if (respBody.paging.is_end) {
                 self.eventDriver.emit(user.url_token, userConn);

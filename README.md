@@ -4,6 +4,9 @@ js爬虫，抓取知乎用户数据
 
 
 ## change log
+2018-04-11: add persistence, using mysql
+2018-04-11: 增加数据存储，使用mysql数据库
+
 2018-04-08: prototype，ouput to console，need to add persistence like databases  
 2018-04-08: 原型，结果全部输出到控制台的，后续需要增加持久化，存储文件等
 

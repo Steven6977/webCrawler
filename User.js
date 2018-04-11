@@ -6,6 +6,7 @@ const domain = 'https://www.zhihu.com'
 
 
 let dataKeys = [
+    'id',
     'name',
     'url_token',
     'gender',
