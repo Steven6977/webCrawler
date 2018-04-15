@@ -50,7 +50,7 @@ class UserConnection {
 
 
     print() {
-        console.log(`==============================${this.user.name}==============================`);
+        console.log(`==============================${this.user.url_token}==============================`);
         console.log('关注他的人[followers]: '+ this.followers.size)
         this.printSet(this.followers);
         console.log('他关注的人[followees]: '+ this.followees.size)

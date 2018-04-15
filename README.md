@@ -4,6 +4,12 @@ js爬虫，抓取知乎用户数据
 
 
 ## change log
+2018-04-15: using pooling connections
+2018-04-15: 使用数据库连接池
+
+2018-04-14: fix bugs, add progress saving  
+2018-04-14: 修改bugs，加入进度缓存
+
 2018-04-11: add persistence, using mysql  
 2018-04-11: 增加数据存储，使用mysql数据库
 
@@ -41,18 +47,13 @@ let zc = new ZC({
     rateLimit: 0,
 
     /**
-     * searching depth, for example, the maxDepth is 2
-     * A is the entry, A -> B -> C, then it stops
-     */
-    maxDepth: 2
-
-    /**
      * database config, optional
      * if database can be undefined, if you don't want
      */
-    ,database: {
+    database: {
         host: "localhost",
         port: 3306,
+        connectionLimit: 10,
         user: "root",
         password: "123456",
         database: "webcrawler"
@@ -64,13 +65,12 @@ zc.start({
      * the entry point of searching
      */
     entry: {
-        name: 'test-name', //just for displaying
         /**
          * For example, search user vczh, his homepage is 
          * https://www.zhihu.com/people/excited-vczh/activities
          * so the url_token is excited-vczh
          */
-        url_token: 'test-name-47'
+        url_token: 'ghost-shing'
     },
     /**
      * most http header has been pre-defined, but cookie and authorization need to be filled,
@@ -93,3 +93,27 @@ zc.start({
 
 ```
 
+## Database
+
+```sql
+CREATE TABLE `progress` (
+  `url_token` varchar(100) NOT NULL,
+  `followers` int(11) DEFAULT '0',
+  `followees` int(11) DEFAULT '0',
+  `done` tinyint(1) DEFAULT '0',
+  PRIMARY KEY (`url_token`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+
+
+CREATE TABLE `user` (
+  `id` varchar(50) DEFAULT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `url_token` varchar(100) NOT NULL,
+  `gender` int(11) DEFAULT NULL,
+  `answer_count` int(11) DEFAULT NULL,
+  `articles_count` int(11) DEFAULT NULL,
+  `follower_count` int(11) DEFAULT NULL,
+  PRIMARY KEY (`url_token`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8
+
+```
