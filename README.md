@@ -36,19 +36,19 @@ start:
 
 index.js:
 ```javascript
-var ZC = require('./ZhihuCrawler')
+var App = require('./app')
 
-let zc = new ZC({
+let app = new App({
 
     /**
      * the thing is, if the http requests is sending too fast, the server will just reject
      */
-    maxConnections: 5,
+    maxConnections: 4,
     /**
      * slow down, maxConnections will be forced to 1 if rateLimit is passed!
      * rateLimit 1000 means sending request at interval of 1 second
      */
-    rateLimit: 0,
+    rateLimit: 1000,
 
     /**
      * database config, optional
@@ -64,7 +64,7 @@ let zc = new ZC({
     }
 });
 
-zc.start({
+app.start({
     /**
      * the entry point of searching
      */
@@ -87,6 +87,10 @@ zc.start({
         'Authorization': ''
     },
     /**
+     * the max searching depth. According to Six Degrees of Separation, 6 is enough.
+     */
+    level: 1,
+    /**
      * callback function when the whole crawling is over
      */
     finished: () => {
@@ -102,21 +106,23 @@ zc.start({
 ```sql
 CREATE TABLE `progress` (
   `url_token` varchar(100) NOT NULL,
-  `followers` int(11) DEFAULT '0',
-  `followees` int(11) DEFAULT '0',
+  `followers_page` int(11) DEFAULT '0',
+  `followees_page` int(11) DEFAULT '0',
   `done` tinyint(1) DEFAULT NULL,
+  `level` tinyint(2) DEFAULT '0',
   PRIMARY KEY (`url_token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
 
 CREATE TABLE `user` (
   `id` varchar(50) DEFAULT NULL,
-  `name` varchar(100) DEFAULT NULL,
   `url_token` varchar(100) NOT NULL,
-  `gender` int(11) DEFAULT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `gender` tinyint(2) DEFAULT NULL,
   `answer_count` int(11) DEFAULT NULL,
   `articles_count` int(11) DEFAULT NULL,
   `follower_count` int(11) DEFAULT NULL,
+  `followee_count` int(11) DEFAULT NULL,
   PRIMARY KEY (`url_token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
