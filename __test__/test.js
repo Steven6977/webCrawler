@@ -1,5 +1,6 @@
 const Crawler = require("../utils/Crawler");
-
+const {log} = require("../utils");
+logger = log("./test.log");
 
 let crawler = new Crawler({
   maxConnections: 4,
@@ -13,18 +14,18 @@ async function start() {
       uri: 'http://google.com/',
       jQuery: false
     }]);
-    console.log('...')
+    
   
     if(error){
-      console.log(error);
+      logger.error(error);
     }else{
-      console.log('Grabbed', res.body.length, 'bytes');
+      logger.info('Grabbed', res.body.length, 'bytes');
     }
     done();
   }catch(e){
-    console.log(e)
+    logger.error(e)
   }
-
+  console.log('end')
 }
 
 start();

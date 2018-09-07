@@ -12,43 +12,61 @@ class Service {
     this.dao.bulkInserts(users);
   }
 
-
   async selectNextUser() {
-    let rows = await this.dao.execute("select * from progress where done = 0 limit 1");
-    if(rows != null && rows.length > 0){
-        return rows[0]
+    try {
+      let rows = await this.dao.execute(
+        "select * from progress where done = 0 limit 1"
+      );
+      if (rows != null && rows.length > 0) {
+        return rows[0];
+      }
+    } catch (e) {
+      console.log(e);
     }
     return null;
   }
 
-  async progressInsert(url_token,level) {
-    await this.dao.execute("insert into progress(url_token, level) values ?", [[url_token, level]] );
-    
+  async progressInsert({ url_token, level }) {
+    try {
+      await this.dao.execute(
+        "insert into progress(url_token, level) values ?",
+        [[url_token, level]]
+      );
+    } catch (e) {
+      console.log(e);
+    }
   }
 
-  async progessUpdate(url_token, type, offset) {
-    await this.dao.execute(
-      "update progress set ? where ?",
-      {
-        [type]: offset
-      },
-      {
-        url_token: url_token
-      }
-    );
-    
+  async progessUpdate({ url_token, type, offset }) {
+    try {
+      await this.dao.execute(
+        "update progress set ? where ?",
+        {
+          [type]: offset
+        },
+        {
+          url_token: url_token
+        }
+      );
+    } catch (e) {
+      console.log(e);
+    }
   }
 
-  async progessDone(url_token) {
-    await this.dao.execute(
-      "update progress set ? where ?",
-      {
-        done: 1
-      },
-      {
-        url_token
-      }
-    );
+  async progessDone({ url_token }) {
+    try {
+      await this.dao.execute(
+        "update progress set ? where ?",
+        {
+          done: 1
+        },
+        {
+          url_token
+        }
+      );
+    } catch (e) {
+      console.log(e);
+    }
   }
 }
 

@@ -36,19 +36,42 @@ start:
 
 index.js:
 ```javascript
+
 var App = require('./app')
 
 let app = new App({
+    /**
+     * the entry point of searching
+     */
+    entry: {
+        /**
+         * For example, search user shing, his homepage is 
+         * https://www.zhihu.com/people/ghost-shing/activities
+         * so the url_token is ghost-shing
+         */
+        url_token: 'ghost-shing'
+    },
 
     /**
-     * the thing is, if the http requests is sending too fast, the server will just reject
+     * the max searching depth. According to Six Degrees of Separation, 6 is enough.
      */
-    maxConnections: 4,
+    level: 1,
     /**
-     * slow down, maxConnections will be forced to 1 if rateLimit is passed!
-     * rateLimit 1000 means sending request at interval of 1 second
+     * callback function when the whole crawling is over
      */
-    rateLimit: 1000,
+    finished: () => {
+        console.log('THE END')
+    }
+    /**
+     * most http header has been pre-defined, but cookie and authorization need to be filled,
+     * log in first, then open debug window for browser, copy these keys.
+     * 
+     * please change it with your Cookie and Authorization!!!
+     */
+    httpHeader: {
+        'Cookie': '',
+        'Authorization': ''
+    },
 
     /**
      * database config, optional
@@ -64,39 +87,7 @@ let app = new App({
     }
 });
 
-app.start({
-    /**
-     * the entry point of searching
-     */
-    entry: {
-        /**
-         * For example, search user vczh, his homepage is 
-         * https://www.zhihu.com/people/excited-vczh/activities
-         * so the url_token is excited-vczh
-         */
-        url_token: 'ghost-shing'
-    },
-    /**
-     * most http header has been pre-defined, but cookie and authorization need to be filled,
-     * log in first, then open debug window for browser, copy these keys.
-     * 
-     * please change it with your Cookie and Authorization!!!
-     */
-    httpHeader: {
-        'Cookie': '',
-        'Authorization': ''
-    },
-    /**
-     * the max searching depth. According to Six Degrees of Separation, 6 is enough.
-     */
-    level: 1,
-    /**
-     * callback function when the whole crawling is over
-     */
-    finished: () => {
-        console.log('THE END')
-    }
-});
+app.start();
 
 
 ```

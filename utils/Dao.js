@@ -18,7 +18,6 @@ class Dao {
   async execute(sql, ...args) {
 	await this.init();
 
-	console.log(sql,args)
 
     try {
       let connection = await this.pool.getConnection();
@@ -43,8 +42,6 @@ class Dao {
     let columns = Object.keys(obj);
     let values = Object.values(obj);
     let sql = `insert into ${table}(${columns.join(",")}) values ?`;
-    // console.log(sql)
-	// console.log(values)
 
     try {
       let connection = await this.pool.getConnection();

@@ -2,51 +2,45 @@ const Crawler = require("./utils/Crawler"),
   User = require("./model/User"),
   Progress = require("./model/Progress"),
   Service = require("./utils/Service"),
-  //customed http header, Authorization and Cookie need to be filled
-  HEADER = {
-    accept: "application/json, text/plain, */*",
-    "User-Agent":
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.181 Safari/537.36",
-    Authorization: "",
-    Cookie: "",
-    "Cache-Control": "max-age=0",
-    Connection: "keep-alive"
-  };
+  { log } = require("../utils");
 
-let finalHttpHeader = null;
+const logger = log("./run.log");
 
-/**
- * ==========================================================================================================================
- */
 
 class App {
-  constructor({ database, maxConnections = 4, rateLimit = 0 }) {
+  constructor({ 
+		database,
+		httpHeader,
+		entry,
+		level,
+		finished
+	}) {
     this.crawler = new Crawler({
-      maxConnections: maxConnections,
-      rateLimit: rateLimit
+      
+    /**
+     * the thing is, if the http requests is sending too fast, the server will just reject
+     */
+    maxConnections: 4,
+    /**
+     * slow down, maxConnections will be forced to 1 if rateLimit is passed!
+     * rateLimit 1000 means sending request at interval of 1 second
+     */
+		rateLimit: 1000,
+		
+		_httpHeader: httpHeader
     });
-
-    if (database != null) {
-      this.service = new Service(database);
-    } else {
-      console.log("please config databases");
-    }
+		this.level = level;
+		this.entry = entry;
+		this.finished = finished;
+    this.service = new Service(database);
   }
 
-  /**
-   * start the task
-   */
-  start({ entry, httpHeader, level, finished }) {
-    let { url_token } = entry;
-    if (url_token == null || url_token == "") {
+  start() {
+    let { url_token } = this.entry;
+    if (!url_token) {
       console.log("url_token is empty! exiting...");
       return;
     }
-
-    this.level = level;
-
-    //merge together http header
-    finalHttpHeader = Object.assign({}, HEADER, httpHeader);
 
     readProgress();
 
@@ -59,34 +53,39 @@ class App {
   }
 
   async analyzeStart(url_token, level) {
-    console.log(`analyzeStart ${url_token}`);
-    try {
-      await this.service.progressInsert(url_token, level);
-    } catch (e) {
-      console.log(e);
-    }
-
-    console.log(`analyzing ${url_token}`);
-    this.analyzing(userConn, "followers");
+    logger.debug(`analyzeStart ${url_token}`);
+    let progress = new Progress({
+      url_token,
+      level
+    });
+    await this.service.progressInsert(progress);
+    //analyze followers firstly
+    this.analyzing(
+      new User({
+        url_token
+			}),
+			progress
+    );
   }
 
-  async analyzing(userConn, type, nextUrl) {
-    let url = userConn.url[type];
+  async analyzing(user, progress) {
+		logger.debug(`analyzing ${url_token}`);
 
-    let { error, res, done } = await this.crawler.promiseQueue([
+    let url = user._url["followers"];
+		await send(url,)
+    
+	}
+	
+	async send(url,) {
+		let { error, res, done } = await this.crawler.promiseQueue([
       {
-        uri: nextUrl ? nextUrl : url,
-        jQuery: false,
-
-        preRequest: function(options, done) {
-          options.headers = finalHttpHeader;
-          done();
-        }
+        uri: url,
+        jQuery: false
       }
     ]);
 
     if (error) {
-      console.error(error);
+      logger.error(error);
     } else {
       let respBody = JSON.parse(res.body),
         users = [],
@@ -102,7 +101,7 @@ class App {
       //save user info
       await this.service.saveUsers(users);
 
-      //update progress, insert new progress
+      //update progress, update progress
       await this.service.progessUpdate(userConn.user.url_token, type, offset);
       for (const user of users) {
         await this.service.progressInsert(user.url_token);
@@ -116,7 +115,7 @@ class App {
       }
     }
     done();
-  }
+	}
 
   async analyzeEnd(userConn, type) {
     if (type == "followers") {
@@ -128,15 +127,12 @@ class App {
 
     let url_token = userConn.user.url_token;
     let nextUser = null;
-    console.log(`analyzeEnd ${url_token}`);
+    logger.debug(`analyzeEnd ${url_token}`);
 
-    try {
-      await this.service.progessDone(url_token);
-      //select next user to start analyzing
-      nextUser = await this.service.selectNextUser();
-    } catch (e) {
-      console.log(e);
-    }
+    await this.service.progessDone(url_token);
+    //select next user to start analyzing
+    nextUser = await this.service.selectNextUser();
+
     if (nextUser == null) {
       console.log("can not find the next user waiting for analyzed");
       return;
