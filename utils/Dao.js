@@ -24,7 +24,7 @@ class Dao {
       let connection = await this.pool.getConnection();
       // execute will internally call prepare and query
       let [rows, fields] = await connection.query(sql, args);
-	  connection.release();
+	  await connection.release();
 	  return rows
     } catch (e) {
 		if(e.code != 'ER_DUP_ENTRY') {
@@ -50,7 +50,7 @@ class Dao {
       let connection = await this.pool.getConnection();
       // execute will internally call prepare and query
        let [rows, fields] = await connection.query(sql, [[values]]);
-	   connection.release();
+	   await connection.release();
 	   return rows;
     } catch (e) {
 		if(e.code != 'ER_DUP_ENTRY') {

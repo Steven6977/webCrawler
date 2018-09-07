@@ -1,4 +1,4 @@
-const { User, UserConnection } = require("./User"),
+const User = require("../model/User"),
   Dao = require("./Dao");
 
 class Service {
@@ -21,16 +21,16 @@ class Service {
     return null;
   }
 
-  async progressInsert(url_token) {
-    await this.dao.execute("insert into progress(url_token) values ?", [[url_token]]);
+  async progressInsert(url_token,level) {
+    await this.dao.execute("insert into progress(url_token, level) values ?", [[url_token, level]] );
     
   }
 
-  async progessUpdate(url_token, type, off) {
+  async progessUpdate(url_token, type, offset) {
     await this.dao.execute(
       "update progress set ? where ?",
       {
-        [type]: off
+        [type]: offset
       },
       {
         url_token: url_token

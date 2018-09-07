@@ -4,7 +4,11 @@ js爬虫，抓取知乎用户数据
 
 
 ## change log
-2018-04-15: using pooling connections
+
+2018-09-08: reactor  
+2018-09-08: 重构代码
+
+2018-04-15: using pooling connections  
 2018-04-15: 使用数据库连接池
 
 2018-04-14: fix bugs, add progress saving  
@@ -100,7 +104,7 @@ CREATE TABLE `progress` (
   `url_token` varchar(100) NOT NULL,
   `followers` int(11) DEFAULT '0',
   `followees` int(11) DEFAULT '0',
-  `done` tinyint(1) DEFAULT '0',
+  `done` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`url_token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
