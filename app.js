@@ -2,7 +2,7 @@ const Crawler = require("./utils/Crawler"),
   User = require("./model/User"),
   Progress = require("./model/Progress"),
   Service = require("./utils/Service"),
-  { log } = require("../utils");
+  { log } = require("./utils");
 
 const logger = log("./run.log");
 
@@ -42,7 +42,7 @@ class App {
       return;
     }
 
-    readProgress();
+    this.readProgress();
 
     //start searching
     this.analyzeStart(url_token, 0);
@@ -69,76 +69,57 @@ class App {
   }
 
   async analyzing(user, progress) {
-		logger.debug(`analyzing ${url_token}`);
+		let {url_token} = user;
+		logger.debug(`analyzing ${url_token} - followers`);
+		await this.loop(user.getUrl("followers"), progress, "followers");
+		
+		logger.debug(`analyzing ${url_token} - followees`);
+		await this.loop(user.getUrl("followees"), progress, "followers");
+		
+		logger.debug(`analyzeEnd ${url_token}`);
 
-    let url = user._url["followers"];
-		await send(url,)
-    
+    //this.analyzeStart(nextUser.url_token);
 	}
 	
-	async send(url,) {
-		let { error, res, done } = await this.crawler.promiseQueue([
-      {
-        uri: url,
-        jQuery: false
-      }
-    ]);
+	async loop(uri, progress, type) {
+		let { error, res, done } = await this.crawler.promiseQueue([{uri}]);
+		done();
 
     if (error) {
       logger.error(error);
     } else {
       let respBody = JSON.parse(res.body),
-        users = [],
-        next = respBody.paging.next,
-        urlParam = new UrlParam(next),
-        offset = urlParam.get("offset");
+				users = [],
+      	nextUrl = respBody.paging.next,
+        nextUrlParam = new UrlParam(nextUrl),
+        offset = nextUrlParam.get("offset");
 
       respBody.data.forEach(e => {
         let u = new User(e);
         users.push(u);
-      });
-
+			});
+			
       //save user info
       await this.service.saveUsers(users);
 
-      //update progress, update progress
-      await this.service.progessUpdate(userConn.user.url_token, type, offset);
-      for (const user of users) {
-        await this.service.progressInsert(user.url_token);
-      }
+			//update progress, update progress
+			progress[`${type}_offset`] = offset;
+      await this.service.progessUpdate(progress);
+
 
       //see if this is the end
       if (respBody.paging.is_end) {
-        this.analyzeEnd(userConn, type);
+				await this.service.progessDone(progress);
+        return type;
       } else {
-        this.analyzing(userConn, type, next);
+        await this.loop(next, progress, type);
       }
-    }
-    done();
+		}
+		
 	}
 
-  async analyzeEnd(userConn, type) {
-    if (type == "followers") {
-      this.analyzing(userConn, "followees");
-      return;
-    }
 
-    //userConn.print();
-
-    let url_token = userConn.user.url_token;
-    let nextUser = null;
-    logger.debug(`analyzeEnd ${url_token}`);
-
-    await this.service.progessDone(url_token);
-    //select next user to start analyzing
-    nextUser = await this.service.selectNextUser();
-
-    if (nextUser == null) {
-      console.log("can not find the next user waiting for analyzed");
-      return;
-    }
-    this.analyzeStart(nextUser.url_token);
-  }
+	
 }
 
 class UrlParam {

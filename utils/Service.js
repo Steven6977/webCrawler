@@ -15,7 +15,7 @@ class Service {
   async selectNextUser() {
     try {
       let rows = await this.dao.execute(
-        "select * from progress where done = 0 limit 1"
+        "select * from (select url_token from progress where done=1) limit 1"
       );
       if (rows != null && rows.length > 0) {
         return rows[0];
@@ -37,12 +37,14 @@ class Service {
     }
   }
 
-  async progessUpdate({ url_token, type, offset }) {
+  async progessUpdate({ url_token, followers_offset, followees_offset }) {
+    
     try {
       await this.dao.execute(
         "update progress set ? where ?",
         {
-          [type]: offset
+          followers_offset,
+          followees_offset
         },
         {
           url_token: url_token

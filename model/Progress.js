@@ -5,8 +5,8 @@ class Progress {
   }) {
     this.url_token = url_token;
     this.level = level;
-    this.followers_page = 0;
-    this.followees_page = 0;
+    this.followers_offset = 0;
+    this.followees_offset = 0;
     this.done = 0;
   }
 

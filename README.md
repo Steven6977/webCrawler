@@ -97,8 +97,8 @@ app.start();
 ```sql
 CREATE TABLE `progress` (
   `url_token` varchar(100) NOT NULL,
-  `followers_page` int(11) DEFAULT '0',
-  `followees_page` int(11) DEFAULT '0',
+  `followers_offset` int(11) DEFAULT '0',
+  `followees_offset` int(11) DEFAULT '0',
   `done` tinyint(1) DEFAULT NULL,
   `level` tinyint(2) DEFAULT '0',
   PRIMARY KEY (`url_token`)
@@ -113,7 +113,7 @@ CREATE TABLE `user` (
   `answer_count` int(11) DEFAULT NULL,
   `articles_count` int(11) DEFAULT NULL,
   `follower_count` int(11) DEFAULT NULL,
-  `followee_count` int(11) DEFAULT NULL,
+  `headline` varchar(2048) DEFAULT NULL,
   PRIMARY KEY (`url_token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
