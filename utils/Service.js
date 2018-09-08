@@ -2,20 +2,20 @@ const User = require("../model/User"),
   Dao = require("./Dao");
 
 class Service {
-  constructor(database) {
-    this.dao = new Dao(database);
+  constructor(dao) {
+    this.dao = dao;
   }
 
-  async saveUsers(users) {
+  async saveObjects(objs) {
     //sometimes may insert failed for duplicating, but it's normal.
     // because some peolple just following each other
-    this.dao.bulkInserts(users);
+    this.dao.bulkInserts(objs);
   }
 
-  async selectNextUser() {
+  async selectNext() {
     try {
       let rows = await this.dao.execute(
-        "select * from (select url_token from progress where done=1) limit 1"
+        "select url_token from progress where done=0 limit 1"
       );
       if (rows != null && rows.length > 0) {
         return rows[0];

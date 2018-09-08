@@ -6,12 +6,14 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --inspect index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --reporter spec"
   },
   "author": "yangluhao",
   "license": "MIT",
   "dependencies": {
+    "chai": "^4.1.2",
     "crawler": "^1.1.2",
+    "mocha": "^5.2.0",
     "mysql2": "^1.5.3",
     "simple-node-logger": "^0.93.37"
   }

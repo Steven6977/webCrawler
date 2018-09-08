@@ -2,17 +2,18 @@ const Crawler = require("./utils/Crawler"),
   User = require("./model/User"),
   Progress = require("./model/Progress"),
   Service = require("./utils/Service"),
-  { log } = require("./utils");
+	{ log, connect, unconnect } = require("./utils"),
+	Dao = require("./Dao");
 
 const logger = log("./run.log");
 
 
 class App {
   constructor({ 
-		database,
-		httpHeader,
-		entry,
-		level,
+		database=null,
+		httpHeader=null,
+		entry=null,
+		level=0,
 		finished
 	}) {
     this.crawler = new Crawler({
@@ -32,20 +33,20 @@ class App {
 		this.level = level;
 		this.entry = entry;
 		this.finished = finished;
-    this.service = new Service(database);
+    this.database = database;
   }
 
   start() {
     let { url_token } = this.entry;
-    if (!url_token) {
-      console.log("url_token is empty! exiting...");
-      return;
-    }
+		
+		connect(this.database).then(pool => {
+			this.service = new Service(new Dao(pool));
+			this.readProgress();
+			this.analyzeStart(url_token, 0);
+		}).catch(e => {
+			console.error(e);
+		})
 
-    this.readProgress();
-
-    //start searching
-    this.analyzeStart(url_token, 0);
   }
 
   readProgress() {
@@ -53,23 +54,16 @@ class App {
   }
 
   async analyzeStart(url_token, level) {
-    logger.debug(`analyzeStart ${url_token}`);
-    let progress = new Progress({
+		let progress = new Progress({
       url_token,
       level
-    });
-    await this.service.progressInsert(progress);
-    //analyze followers firstly
-    this.analyzing(
-      new User({
-        url_token
-			}),
-			progress
-    );
-  }
+		});
 
-  async analyzing(user, progress) {
-		let {url_token} = user;
+		logger.debug(`analyzeStart ${url_token}`);
+    await this.service.progressInsert(progress);
+    
+		let user = new User({url_token});
+
 		logger.debug(`analyzing ${url_token} - followers`);
 		await this.loop(user.getUrl("followers"), progress, "followers");
 		
@@ -77,10 +71,18 @@ class App {
 		await this.loop(user.getUrl("followees"), progress, "followers");
 		
 		logger.debug(`analyzeEnd ${url_token}`);
+		await this.service.progessDone(progress);
 
-    //this.analyzeStart(nextUser.url_token);
-	}
-	
+		if(progress.level < this.level) {
+			let next = await this.service.selectNext();
+			console.log(next);
+		}else {
+			this.finished();
+		}
+
+  }
+
+
 	async loop(uri, progress, type) {
 		let { error, res, done } = await this.crawler.promiseQueue([{uri}]);
 		done();
@@ -89,18 +91,24 @@ class App {
       logger.error(error);
     } else {
       let respBody = JSON.parse(res.body),
-				users = [],
       	nextUrl = respBody.paging.next,
         nextUrlParam = new UrlParam(nextUrl),
-        offset = nextUrlParam.get("offset");
+        offset = nextUrlParam.get("offset") - 20;
 
+			let users = [], pros = [];
       respBody.data.forEach(e => {
-        let u = new User(e);
-        users.push(u);
+				users.push(new User(e));
+				pros.push(new Progress({
+					url_token: e.url_token,
+					level: progress.level + 1
+				}))
 			});
 			
       //save user info
-      await this.service.saveUsers(users);
+			await this.service.saveObjects(users);
+			
+			//save progress to be done
+			await this.service.saveObjects(pros);
 
 			//update progress, update progress
 			progress[`${type}_offset`] = offset;
@@ -109,7 +117,6 @@ class App {
 
       //see if this is the end
       if (respBody.paging.is_end) {
-				await this.service.progessDone(progress);
         return type;
       } else {
         await this.loop(next, progress, type);
