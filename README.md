@@ -5,7 +5,7 @@ js爬虫，抓取知乎用户数据
 
 ## change log
 
-2018-09-09: rejection from Zhihu.com server, maybe because of too frequent requests. Need to address this problem later...
+2018-09-09: rejection from Zhihu.com server, maybe because of too frequent requests. Need to address this problem later...  
 2018-09-09: 服务器拒绝访问，还需要解决
 
 2018-09-08: reactor  
