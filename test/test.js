@@ -12,7 +12,7 @@ let crawler = new Crawler({
 async function start() {
   console.log('start')
   try{
-    let {error, res, done} = await crawler.promiseQueue([{
+    let {error, res } = await crawler.promiseQueue([{
       uri: 'https://www.zhihu.com/api/v4/members/ghost-shing/followees?include=data%5B*%5D.answer_count%2Carticles_count%2Cgender%2Cfollower_count%2Cis_followed%2Cis_following%2Cbadge%5B%3F(type%3Dbest_answerer)%5D.topics&offset=0&limit=20',
       jQuery: false
     }]);
@@ -23,7 +23,7 @@ async function start() {
     }else{
       console.info(res.body);
     }
-    done();
+    
   }catch(e){
     console.error(e)
   }

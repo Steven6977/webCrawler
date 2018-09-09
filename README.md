@@ -5,6 +5,9 @@ js爬虫，抓取知乎用户数据
 
 ## change log
 
+2018-09-09: rejection from Zhihu.com server, maybe because of too frequent requests. Need to address this problem later...
+2018-09-09: 服务器拒绝访问，还需要解决
+
 2018-09-08: reactor  
 2018-09-08: 重构代码
 
@@ -96,12 +99,14 @@ app.start();
 
 ```sql
 CREATE TABLE `progress` (
-  `url_token` varchar(100) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `url_token` varchar(100) DEFAULT NULL,
   `followers_offset` int(11) DEFAULT '0',
   `followees_offset` int(11) DEFAULT '0',
   `done` tinyint(1) DEFAULT NULL,
   `level` tinyint(2) DEFAULT '0',
-  PRIMARY KEY (`url_token`)
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `url_token_UNIQUE` (`url_token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8
 
 

@@ -3,7 +3,7 @@ const Crawler = require("./utils/Crawler"),
   Progress = require("./model/Progress"),
   Service = require("./utils/Service"),
 	{ log, connect, unconnect } = require("./utils"),
-	Dao = require("./Dao");
+	Dao = require("./utils/Dao");
 
 const logger = log("./run.log");
 
@@ -26,31 +26,35 @@ class App {
      * slow down, maxConnections will be forced to 1 if rateLimit is passed!
      * rateLimit 1000 means sending request at interval of 1 second
      */
-		rateLimit: 1000,
+		//rateLimit: 100,
 		
 		_httpHeader: httpHeader
-    });
+		
+		});
 		this.level = level;
 		this.entry = entry;
 		this.finished = finished;
     this.database = database;
   }
 
-  start() {
-    let { url_token } = this.entry;
-		
-		connect(this.database).then(pool => {
+  async start() {
+		let { url_token } = this.entry;
+		// this.crawler.on('drain',function(){
+		// 	console.log('drain...');
+		// });
+
+		try{
+			let pool = await connect(this.database);
 			this.service = new Service(new Dao(pool));
 			this.readProgress();
 			this.analyzeStart(url_token, 0);
-		}).catch(e => {
+		}catch(e) {
 			console.error(e);
-		})
-
+		}
   }
 
   readProgress() {
-    this.map = new Map();
+    //select next url_token from progress
   }
 
   async analyzeStart(url_token, level) {
@@ -65,18 +69,24 @@ class App {
 		let user = new User({url_token});
 
 		logger.debug(`analyzing ${url_token} - followers`);
-		await this.loop(user.getUrl("followers"), progress, "followers");
+		let followers_count = await this.loop(user.getUrl("followers"), progress, "followers");
 		
 		logger.debug(`analyzing ${url_token} - followees`);
-		await this.loop(user.getUrl("followees"), progress, "followers");
+		let followees_count = await this.loop(user.getUrl("followees"), progress, "followers");
 		
 		logger.debug(`analyzeEnd ${url_token}`);
 		await this.service.progessDone(progress);
 
-		if(progress.level < this.level) {
-			let next = await this.service.selectNext();
-			console.log(next);
+		logger.debug(`${url_token}(level ${level}) has ${followers_count} followers and ${followees_count} followees`);
+
+		let next = await this.service.selectNext();
+		if(next.level < this.level) {
+			logger.debug(`next url_token is ${next.url_token}`);
+			logger.debug(`${next.level} | ${this.level}`);
+			this.analyzeStart(next.url_token, next.level);
 		}else {
+			logger.debug("All done!");
+			await unconnect(this.service.dao.pool);
 			this.finished();
 		}
 
@@ -84,16 +94,21 @@ class App {
 
 
 	async loop(uri, progress, type) {
-		let { error, res, done } = await this.crawler.promiseQueue([{uri}]);
-		done();
+		let { error, res } = await this.crawler.promiseQueue([{uri}]);
 
     if (error) {
       logger.error(error);
     } else {
-      let respBody = JSON.parse(res.body),
-      	nextUrl = respBody.paging.next,
-        nextUrlParam = new UrlParam(nextUrl),
-        offset = nextUrlParam.get("offset") - 20;
+			let respBody = JSON.parse(res.body);
+			let nextUrl, nextUrlParam, offset;
+			try{
+				nextUrl = respBody.paging.next;
+        nextUrlParam = new UrlParam(nextUrl);
+			}catch(e) {
+				console.error(e);
+				console.error(respBody);
+			}
+			offset = nextUrlParam.get("offset") - 20;
 
 			let users = [], pros = [];
       respBody.data.forEach(e => {
@@ -101,12 +116,14 @@ class App {
 				pros.push(new Progress({
 					url_token: e.url_token,
 					level: progress.level + 1
-				}))
+				}));
 			});
 			
+			logger.debug(users.map(e => e.name).join(","));
+
       //save user info
 			await this.service.saveObjects(users);
-			
+
 			//save progress to be done
 			await this.service.saveObjects(pros);
 
@@ -114,15 +131,13 @@ class App {
 			progress[`${type}_offset`] = offset;
       await this.service.progessUpdate(progress);
 
-
-      //see if this is the end
+			//see if this is the end
       if (respBody.paging.is_end) {
-        return type;
+        return respBody.paging.totals;
       } else {
-        await this.loop(next, progress, type);
+        return await this.loop(nextUrl, progress, type);
       }
-		}
-		
+		}	
 	}
 
 

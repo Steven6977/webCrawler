@@ -16,7 +16,7 @@ let app = new App({
     /**
      * the max searching depth. According to Six Degrees of Separation, 6 is enough.
      */
-    level: 2,
+    level: 3,
     /**
      * callback function when the whole crawling is over
      */

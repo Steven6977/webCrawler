@@ -23,7 +23,7 @@ async function connect(options) {
 
 async function unconnect(pool) {
   try {
-    await this.pool.end();
+    await pool.end();
   } catch (e) {
     console.log(e);
     return false;

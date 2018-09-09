@@ -31,9 +31,10 @@ class Crawler extends crawler {
             });
           } else {
             resolve({
-              res,
-              done
+              res
             });
+            //trigger next calls
+            done();
           }
         };
       });

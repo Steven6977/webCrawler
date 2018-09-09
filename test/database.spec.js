@@ -33,11 +33,29 @@ after(function() {
   console.log('connection shutdown')
 });
 
+describe('service testing', function() {
+  it('save progress', async function() {
+    let data = [];
+    data.push(new Progress({
+      url_token: "asdf",
+      level: 0
+    }));
+    data.push(new Progress({
+      url_token: "iunrv",
+      level: 1
+    }));
+
+    let count = await service.saveObjects(data);
+    expect(count).to.equal(data.length)
+  });
+});
+
+
 
 describe('service testing', function() {
   it('selectNext', async function() {
     let obj = await service.selectNext();
-    console.log(obj);
+    expect(obj.url_token).to.equal("asdf");
   });
 });
 
